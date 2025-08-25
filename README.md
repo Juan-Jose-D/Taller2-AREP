@@ -1,8 +1,161 @@
-# Arquitecturas empresariales - Taller 1 
+# Arquitecturas empresariales - Taller 2
 
-Este proyecto implementa un servidor web en Java que maneja múltiples solicitudes de manera secuencial (no concurrente). El servidor es capaz de leer archivos del disco local y devolver cualquier archivo solicitado, incluyendo páginas HTML, archivos JavaScript, CSS e imágenes. Implementa uuna arquitectura de servidow web sencillo basado en java, donde el servidor HTTP básico se ejecuta, acepta solicitudes de clientes, las procesa y envía las respuestas.
+[![Java](https://img.shields.io/badge/Java-17%2B-blue.svg)](https://www.oracle.com/java/)
+[![Maven](https://img.shields.io/badge/Maven-Build-brightgreen.svg)](https://maven.apache.org/)
+
+Este proyecto tiene como objetivo transformar un servidor web básico en un framework web completamente funcional, permitiendo a los desarrolladores construir aplicaciones web modernas con servicios REST en el backend. El framework proporciona herramientas para definir servicios REST mediante funciones lambda, gestionar parámetros de consulta en las solicitudes y especificar la ubicación de archivos estáticos.
 
 ---
+
+
+## Características Principales
+
+1. **Definición de Servicios REST con Lambdas**
+  - Permite definir rutas REST de manera simple y elegante utilizando expresiones lambda:
+  - Ejemplo:
+    ```java
+    get("/App/hello", (req, res) -> "hello world!");
+    get("/pi", (req, res) -> String.valueOf(Math.PI));
+    ```
+Esto facilita la creación de rutas claras y concisas, mapeando URLs a funciones específicas.
+
+2. **Extracción de Parámetros de Consulta**
+  - El framework parsea automáticamente los query parameters y los expone através del objeto Request:
+  - Ejemplo:
+    ```java
+    // URL: /hello?name=Pedro&age=25
+    get("/hello", (req, res) -> {
+        String name = req.getValues("name"); // "Pedro"
+        String age = req.getValues("age");   // "25"
+        return "Hello " + name + ", you are " + age + " years old";
+    });
+    ```
+Permite construir servicios dinámicos y personalizados de forma sencilla.
+
+3. **Especificación de Ubicación de Archivos Estáticos**
+  - Mediante el método `staticfiles()`, los desarrolladores pueden definir la carpeta donde se encuentran los archivos estáticos.
+  - Ejemplo:
+    ```java
+    staticfiles("public");
+    ```
+  - El framework buscará archivos como HTML, CSS, JS e imágenes en la carpeta especificada, facilitando la organización de recursos.
+
+4. **Manejo Automático de Tipos MIME**
+Detecta y sirve automáticamente diferentes tipos de archivos:
+
+- HTML, CSS, JavaScript
+- Imágenes (PNG, JPG)
+- Respuestas JSON para APIs
+
+---
+
+## Arquitectura del Framework
+
+El núcleo de este proyecto es la clase `HttpServer`, que implementa un framework web en Java puro. Este framework permite a los desarrolladores definir servicios REST y servir archivos estáticos de manera sencilla, sin depender de frameworks externos.
+
+### Componentes Principales
+
+- **HttpServer (Núcleo del Framework):**
+  - Implementa `ServerSocket` para escuchar en el puerto **35000**.
+  - Maneja **routing** mediante `HashMap<String, RouteHandler>`.
+  - Procesa solicitudes HTTP de forma **síncrona**.
+  - Integra un **mini-framework** para definición de rutas.
+
+- **Clases del Mini-Framework:**
+  - `RouteHandler`: Interfaz funcional para handlers de rutas.
+  - `Request`: Encapsula información de la solicitud (path, query params).
+  - `Response`: Placeholder para futuras extensiones de respuesta.
+
+- **Component API:**
+  - Modelo de datos para gestión de componentes.
+  - Almacenamiento en memoria temporal con `List<Component>`.
+  - Serialización JSON manual.
+
+### Estructura General
+
+- **Definición de rutas REST:**
+  Se utiliza el método `get(String path, RouteHandler handler)` para mapear rutas a funciones lambda que procesan las solicitudes.
+
+- **Manejo de parámetros de consulta:**
+  Los parámetros de la URL se extraen automáticamente y se pueden acceder desde el objeto `Request` dentro de cada handler.
+
+- **Archivos estáticos:**
+  El método `staticfiles(String folder)` permite especificar la carpeta raíz de los archivos estáticos.
+
+### Ejemplo de Configuración de Rutas
+
+En la primera parte del método `main` se configuran las rutas y la carpeta de archivos estáticos.  
+
+```java
+public static void main(String[] args) {
+    staticfiles("/public");
+    get("/App/hello", (req, res) -> "Hello " + req.getValues("name"));
+    get("/App/pi", (req, res) -> String.valueOf(Math.PI));
+    HttpServer.main(args); 
+}
+```
+### Flujo de Procesamiento de Solicitudes
+
+```mermaid
+flowchart TD
+    A[Cliente HTTP] --> B[HttpServer:35000]
+    B --> C{Tipo de Solicitud?}
+    
+    C -->|"Ruta Lambda"| D["getRoutes.get(path)"]
+    D --> E["Ejecutar RouteHandler"]
+    E --> F["Retornar Respuesta"]
+    
+    C -->|"/api/components"| G["handleApiRequest"]
+    G --> H{GET o POST?}
+    H -->|GET| I["Serializar Components a JSON"]
+    H -->|POST| J["Parsear JSON y Agregar Component"]
+    I --> F
+    J --> F
+    
+    C -->|"Archivo Estático"| K["serveStaticFile"]
+    K --> L["Buscar en staticFilesFolder"]
+    L --> M{Archivo Existe?}
+    M -->|Sí| N["Servir con MIME Type"]
+    M -->|No| O["404 Not Found"]
+    N --> F
+    O --> F
+
+```
+
+---
+## Estructura de archivos del proyecto
+
+```bash
+.
+├── .mvn/                    # Configuración de Maven Wrapper
+├── public/                  # Archivos estáticos accesibles desde el navegador
+│   ├── images/              # Carpeta con imágenes usadas en la aplicación y en el readme 
+│   ├── app.js               # Lógica del lado del cliente en JavaScript
+│   ├── index.html           # Página principal de la aplicación
+│   ├── clase.html           # Página web sencilla hecha en clase
+│   └── styles.css           # Hojas de estilo para dar diseño a la interfaz           
+├── src/                     # Código fuente y pruebas
+│   ├── main/                # Código principal
+│   │   ├── java/                 
+│   │   │   └── com/
+│   │   │       └── arep/
+│   │   │           └── Component.java    # Clase modelo para representar un componente
+│   │   │           └── HttpServer.java   # Clase principal del servidor
+│   │   │           └── clase/            # Archivos creados en las clases de laboratorio
+│   └── test/                             # Código de pruebas unitarias
+│       └── java/
+│           └── com/
+│               └── arep/
+│                   └── ComponentTest.java
+│                   └── HttpServerIntegrationTest.java
+│                   └── HttpServerTest.java
+├── target/                       # Archivos compilados y empaquetados (generado por Maven)
+├── pom.xml                       # Configuración de Maven (dependencias y build)
+└── README.md
+```
+
+---
+
 
 ## Capturas de pantalla de la aplicación
 
@@ -27,96 +180,11 @@ Y justo después hce un get a /api/components y recibe la información del compo
 
 ---
 
-## Estructura de archivos del proyecto
-
-```bash
-.
-├── .mvn/                    # Configuración de Maven Wrapper
-├── public/                  # Archivos estáticos accesibles desde el navegador
-│   ├── images/              # Carpeta con imágenes usadas en la aplicación y en el readme 
-│   ├── app.js               # Lógica del lado del cliente en JavaScript
-│   ├── index.html           # Página principal de la aplicación
-│   └── styles.css           # Hojas de estilo para dar diseño a la interfaz           
-├── src/                     # Código fuente y pruebas
-│   ├── main/                # Código principal
-│   │   ├── java/                 
-│   │   │   └── com/
-│   │   │       └── arep/
-│   │   │           └── Component.java    # Clase modelo para representar un componente
-│   │   │           └── HttpServer.java   # Clase principal del servidor
-│   └── test/                             # Código de pruebas unitarias
-│       └── java/
-│           └── com/
-│               └── arep/
-│                   └── ComponentTest.java
-│                   └── HttpServerIntegrationTest.java
-│                   └── HttpServerTest.java
-├── target/                       # Archivos compilados y empaquetados (generado por Maven)
-├── pom.xml                       # Configuración de Maven (dependencias y build)
-└── README.md
-```
-
----
-
-## Arquitectura del proyecto
-
-
-**Backend (Servidor Java)**
-
-
-El backend está compuesto por un servidor HTTP implementado en Java que:
-
-- Utiliza ServerSocket para escuchar en el puerto 35000
-- Maneja dos tipos de solicitudes:
-  - Archivos estáticos: Sirve recursos (HTML, CSS, JS, imágenes) desde la carpeta public/
-  - API REST: Expone endpoints en /api/components con:
-
-    - GET /api/components → Devuelve todos los componentes en formato JSON
-    - POST /api/components → Agrega un nuevo componente (recibe JSON en el cuerpo)
-
-
-Características clave:
-
-Manejo de JSON: Implementa parser personalizado para solicitudes POST
-Tipos MIME: Detecta automáticamente content-type para archivos estáticos
-Almacenamiento: Mantiene componentes en memoria (lista static)
-
-
-**Frontend (Aplicación Web)**
-
-Interfaz construida con:
-
-- index.html: Estructura principal con formulario y tabla para mostrar los componentes.
-- styles.css: Estilos visuales.
-- app.js: Lógica de cliente que comunica con el API usando fetch(), maneja eventos del formulario y actualiza dinámicamente la tabla de componentes
-
-```mermaid
-sequenceDiagram
-    Frontend->>Backend: GET / (solicita index.html)
-    Backend-->>Frontend: Archivos estáticos (HTML/CSS/JS)
- 
-    Frontend->>Backend: GET /api/components
-    Backend-->>Frontend: JSON con lista de componentes
-
-    Note right of Frontend: Vacío porque no hay persistencia
-    Frontend->>Frontend: Renderiza tabla con componentes
-    
-    Frontend->>Backend: POST /api/components (nuevo componente)
-    Backend-->>Frontend: 201 Created
-    
-    Frontend->>Backend: GET /api/components (refrescar lista)
-    Backend-->>Frontend: JSON actualizado
-    Frontend->>Frontend: Actualiza tabla dinámicamente
-
-```
-
----
 
 ## Ejecutando el proyecto
 
 Estas instrucciones permiten obtener una copia del proyecto en funcionamiento en la máquina local para desarrollo y pruebas.
 
-El servidor se implementa utilizando sockets en Java y gestiona solicitudes GET y POST para obtener y agregar componentes a través de una API REST básica sin hacer uso de frameworks como spring.
 
 ### Pre-requisitos
 
@@ -135,13 +203,13 @@ Siga estos pasos para obtener un entorno de desarrollo funcional:
 Clone este repositorio:
 
 ```bash
-git clone https://github.com/AnaDuranB/Taller-01-AREP.git
+git clone https://github.com/Juan-Jose-D/Taller2-AREP.git
 ```
 
 Ingrese al directorio del proyecto:
 
 ```bash
-cd Taller1-AREP
+cd Taller2-AREP
 ```
 
 Compile el proyecto con Maven:
@@ -158,10 +226,15 @@ java -cp target/classes com.arep.HttpServer
 
 ![screenshot](/public/images/image6.png)
 
-Abra su navegador y acceda a:
+Abra su navegador y acceda a alguna de las rutas:
 
 ```bash
+# Páginas estáticas
 http://localhost:35000/index.html
+http://localhost:35000/clase.html
+# Funciones
+http://localhost:35000/App/hello?name=Juan
+http://localhost:35000/App/pi
 ```
 
 ---
