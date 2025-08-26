@@ -157,9 +157,9 @@ flowchart TD
 ---
 
 
-## Capturas de pantalla de la aplicación
+## Capturas de pantalla
 
-La aplicación web funciona como una lista para guarda los libros, películas y series que el usuario haya visto y quiera guardar para futuros recuerdos, puede añadir una descripción y una calificación.
+Si vamos a la url http://localhost:35000/index.html vemos la aplicación web creada para el taller 1, es una lista para tener los libros, películas y series que el usuario haya visto y quiera guardar para futuros recuerdos, puede añadir una descripción y una calificación.
 
 ![screenshot](/public/images/image.png)
 
@@ -169,14 +169,11 @@ Puede especificar si es un libro, película o serie.
 
 ![screenshot](/public/images/image3.png)
 
-En la opción de Network de la herramienta de inspección del navegador podemos observar que hace un post al endpoint /api/components para crear el componente.
 
-![screenshot](/public/images/image5.png)
+Si vamos a la url http://localhost:35000/clase.html vemos la página web hecha en clase, la primera simplemente imprime "Hello" y el nombre que se ponga, y la segunda imprime el número pi, estos endpoints fueron creados usando funciones lambda.
 
-Y justo después hce un get a /api/components y recibe la información del componente en formato json
 
-![screenshot](/public/images/image4.png)
-
+![screenshot](/public/images/image7.png)
 
 ---
 
